@@ -97,6 +97,7 @@ func validateTokenCameFromGitHub(oidcTokenString string, gc *GatewayContext) (jw
 	// Attempt to validate JWT with JWKS
 	oidcToken, err := jwt.Parse(string(oidcTokenString), getKeyFromJwks(gc.jwksCache))
 	if err != nil || !oidcToken.Valid {
+		fmt.Println(err)
 		return nil, fmt.Errorf("Unable to validate JWT")
 	}
 
@@ -156,6 +157,8 @@ func handleApiRequest(w http.ResponseWriter) {
 
 func (gatewayContext *GatewayContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodConnect && req.RequestURI != "/apiExample" {
+		fmt.Println("Go away!")
+
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -165,7 +168,7 @@ func (gatewayContext *GatewayContext) ServeHTTP(w http.ResponseWriter, req *http
 	// This only means the OIDC token came from any GitHub Actions workflow,
 	// we *must* check claims specific to our use case below
 	oidcTokenString := string(req.Header.Get("Gateway-Authorization"))
-
+	fmt.Println("OIDC token: " + oidcTokenString)
 	claims, err := validateTokenCameFromGitHub(oidcTokenString, gatewayContext)
 	if err != nil {
 		fmt.Println(err)
@@ -180,9 +183,20 @@ func (gatewayContext *GatewayContext) ServeHTTP(w http.ResponseWriter, req *http
 	//
 	// Here we check the same claims for all requests, but you could customize
 	// the claims you check per handler below
-	if claims["repository"] != "octo-org/octo-repo" {
+	// print all claims
+
+	for key, value := range claims {
+		fmt.Printf("Key: %s, value: %v\n", key, value)
+	}
+
+	allowed := "tonit/playground-workflows"
+
+	if claims["repository"] != allowed {
+		fmt.Println("repository is not " + allowed)
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
+	} else {
+		fmt.Println("repository is " + allowed)
 	}
 
 	// You can customize the audience when you request an Actions OIDC token.
@@ -216,6 +230,7 @@ func main() {
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 	}
+	fmt.Println("serving at " + server.Addr)
 
 	server.ListenAndServe()
 }
