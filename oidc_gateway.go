@@ -78,7 +78,13 @@ func validateTokenCameFromGitHub(oidcTokenString string, gc *GatewayContext) (jw
 	now := time.Now()
 
 	if now.Sub(gc.jwksLastUpdate) > time.Minute || len(gc.jwksCache) == 0 {
-		resp, err := http.Get("https://token.actions.githubusercontent.com/.well-known/jwks")
+		// Get this from OICD discovery endpoint
+		jwks_url, err := discoverJwksUrl("https://token.actions.githubusercontent.com")
+		if err != nil {
+			fmt.Println(err)
+			return nil, fmt.Errorf("Unable to get OpenID configuration")
+		}
+		resp, err := http.Get(jwks_url)
 		if err != nil {
 			fmt.Println(err)
 			return nil, fmt.Errorf("Unable to get JWKS configuration")
@@ -107,6 +113,29 @@ func validateTokenCameFromGitHub(oidcTokenString string, gc *GatewayContext) (jw
 	}
 
 	return claims, nil
+}
+
+func discoverJwksUrl(endpoint string) (string, error) {
+	resp, err := http.Get(endpoint + "/.well-known/openid-configuration")
+	if err != nil {
+		fmt.Println(err)
+		return "", fmt.Errorf("unable to get OpenID configuration")
+	}
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return "", fmt.Errorf("unable to get OpenID configuration (parsing body)")
+	}
+
+	var result map[string]interface{}
+
+	if json.Unmarshal(bytes, &result) != nil {
+		fmt.Println(err)
+		return "", fmt.Errorf("unable to parse OpenID configuration")
+	}
+	// get jwks_uri from json
+	return result["jwks_uri"].(string), nil
 }
 
 func transfer(destination io.WriteCloser, source io.ReadCloser) {

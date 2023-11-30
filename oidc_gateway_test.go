@@ -11,6 +11,17 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+func TestDiscoverJwks(t *testing.T) {
+	// Test that the jwks config is fetched from the correct URL
+	jwksConfig, err := discoverJwksUrl("https://token.actions.githubusercontent.com")
+	if err != nil {
+		t.Error(err)
+	}
+	if jwksConfig != "https://token.actions.githubusercontent.com/.well-known/jwks" {
+		t.Error("Unexpected jwks config URL: " + jwksConfig)
+	}
+}
+
 func TestGetKeyForTokenMaker(t *testing.T) {
 	// Create a JWKS for verifying tokens
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
