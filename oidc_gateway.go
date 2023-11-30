@@ -220,7 +220,7 @@ func (gatewayContext *GatewayContext) ServeHTTP(w http.ResponseWriter, req *http
 }
 
 func main() {
-	fmt.Println("Starting up..")
+	fmt.Println("Starting up...")
 
 	gatewayContext := &GatewayContext{jwksLastUpdate: time.Now()}
 
