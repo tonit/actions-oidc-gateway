@@ -163,6 +163,11 @@ func (gatewayContext *GatewayContext) ServeHTTP(w http.ResponseWriter, req *http
 		return
 	}
 
+	// write all headers
+	for key, value := range req.Header {
+		fmt.Printf("Key: %s, value: %v\n", key, value)
+	}
+
 	// Check that the OIDC token verifies as a valid token from GitHub
 	//
 	// This only means the OIDC token came from any GitHub Actions workflow,
