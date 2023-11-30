@@ -220,7 +220,7 @@ func (gatewayContext *GatewayContext) ServeHTTP(w http.ResponseWriter, req *http
 }
 
 func main() {
-	fmt.Println("starting up")
+	fmt.Println("Starting up..")
 
 	gatewayContext := &GatewayContext{jwksLastUpdate: time.Now()}
 
@@ -232,5 +232,10 @@ func main() {
 	}
 	fmt.Println("serving at " + server.Addr)
 
-	server.ListenAndServe()
+	err := server.ListenAndServe()
+	if err != nil {
+		fmt.Println("Gracefully exiting with error " + server.Addr)
+		return
+	}
+	return
 }
